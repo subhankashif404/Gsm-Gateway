@@ -1,0 +1,42 @@
+{
+  "name": "gsm-gateway",
+  "version": "1.0.0",
+  "description": "Local GSM SMS Gateway with SIM Rotation, Bulk SMS, and Telegram Notifications",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "setup": "node scripts/setup.js",
+    "vercel-build": "echo 'Vercel build complete'",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel"
+  },
+  "dependencies": {
+    "@serialport/parser-delimiter": "^12.0.0",
+    "@serialport/parser-readline": "^12.0.0",
+    "better-sqlite3": "^12.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "moment": "^2.30.1",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.65.1",
+    "serialport": "^13.0.0",
+    "uuid": "^9.0.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "GSM Gateway",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/subhankashif404/Gsm-Gateway.git"
+  }
+}

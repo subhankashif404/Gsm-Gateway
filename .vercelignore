@@ -1,0 +1,44 @@
+# Dependencies (Vercel installs automatically)
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Database files
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Documentation (not needed for deployment)
+README.md
+DEPLOYMENT.md
+VERCEL_DEPLOYMENT.md
+FIXES_APPLIED.md
+QUICK_START.md
+TELEGRAM_SETUP.md
+
+# Development files
+cleanup-github.bat
+setup-github.sh
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/

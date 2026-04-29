@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GSM Gateway Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface2: #141414;
+  --surface3: #1a1a1a;
+  --border: #262626;
+  --accent: #facc15;
+  --accent-glow: rgba(250, 204, 21, 0.15);
+  --accent2: #eab308;
+  --accent3: #10b981;
+  --danger: #ef4444;
+  --warn: #f59e0b;
+  --text: #ffffff;
+  --muted: #a3a3a3;
+  --sent: #10b981;
+  --received: #facc15;
+  --failed: #ef4444;
+  --pending: #f59e0b;
+  --font: 'Space Grotesk', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --card-bg: rgba(255, 255, 255, 0.02);
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.sim-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease;
+}
+
+.sim-card:hover {
+  transform: scale(1.015);
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;overflow:hidden;}
+
+/* ── Login ── */
+#login-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  background-image: radial-gradient(circle at 50% 50%, var(--surface3) 0%, var(--bg) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity .4s;
+}
+#login-screen.hidden { opacity: 0; pointer-events: none; }
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 60px 48px;
+  width: 400px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  position: relative;
+}
+.login-box::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px; right: -1px; bottom: -1px;
+  border-radius: 24px;
+  padding: 1px;
+  background: linear-gradient(to bottom, var(--accent), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.login-box .logo {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  margin-bottom: 12px;
+  color: #fff;
+}
+.login-box .logo span { color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); }
+.login-box p { color: var(--muted); margin-bottom: 40px; font-size: 14px; }
+.login-box input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  outline: none;
+  margin-bottom: 16px;
+  transition: all .2s;
+  text-align: center;
+  letter-spacing: 4px;
+}
+.login-box input:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+.login-box button {
+  width: 100%;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-family: var(--font);
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.login-box button:hover { transform: translateY(-1px); box-shadow: 0 5px 15px var(--accent-glow); }
+.login-error { color: var(--danger); font-size: 13px; margin-top: 15px; min-height: 18px; font-weight: 500; }
+
+/* ── Layout ── */
+#app{display:flex;height:100vh;}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;}
+.logo{padding:0 20px 24px;font-size:16px;font-weight:700;letter-spacing:-.5px;display:flex;align-items:center;gap:8px;}
+.logo .dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);}
+nav{flex:1;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--muted);transition:all .15s;border-left:3px solid transparent;font-weight:500;}
+.nav-item:hover{color:var(--text);background:var(--surface2);padding-left:24px;}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-glow);font-weight:700;}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;transition:transform .2s;}
+.nav-item:hover svg{transform:translateX(2px);}
+.nav-badge{margin-left:auto;background:var(--accent);color:#000;font-size:11px;font-weight:800;padding:2px 7px;border-radius:99px;box-shadow:0 0 10px var(--accent-glow);}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);}
+.conn-status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);}
+.conn-dot.online{background:var(--accent3);box-shadow:0 0 6px var(--accent3);}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0;}
+.topbar h1{font-size:16px;font-weight:600;}
+.topbar .spacer{flex:1;}
+.topbar-stats{display:flex;gap:20px;}
+.topbar-stat{display:flex;align-items:center;gap:6px;font-size:13px;}
+.topbar-stat .val{font-weight:700;}
+.topbar-stat.sent .val{color:var(--sent);}
+.topbar-stat.recv .val{color:var(--received);}
+.topbar-stat.fail .val{color:var(--failed);}
+.topbar-stat.pend .val{color:var(--pending);}
+
+.content{flex:1;overflow:auto;padding:24px;}
+
+/* ── Page sections ── */
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── Stat cards ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);}
+.stat-card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 10px 30px -10px var(--accent-glow);}
+.stat-card::before{content:'';position:absolute;inset:0;opacity:.03;border-radius:16px;transition:opacity .3s;}
+.stat-card:hover::before{opacity:.08;}
+.stat-card.sent::before{background:var(--sent);}
+.stat-card.recv::before{background:var(--received);}
+.stat-card.fail::before{background:var(--failed);}
+.stat-card.pend::before{background:var(--pending);}
+.stat-card .label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;}
+.stat-card .value{font-size:36px;font-weight:800;font-family:var(--mono);letter-spacing:-1px;}
+.stat-card.sent .value{color:var(--sent);text-shadow:0 0 20px rgba(16,185,129,0.2);}
+.stat-card.recv .value{color:var(--received);text-shadow:0 0 20px var(--accent-glow);}
+.stat-card.fail .value{color:var(--failed);text-shadow:0 0 20px rgba(239,68,68,0.2);}
+.stat-card.pend .value{color:var(--pending);text-shadow:0 0 20px rgba(245,158,11,0.2);}
+.stat-card .icon{position:absolute;right:20px;bottom:20px;opacity:.05;font-size:48px;filter:grayscale(1) brightness(2);}
+
+/* ── SIM grid ── */
+.sim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
+.sim-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all .2s;position:relative;}
+.sim-card:hover{border-color:var(--accent);background:var(--surface2);transform:scale(1.02);}
+.sim-card.offline{opacity:.5;}
+.sim-card.blocked{border:2px solid var(--danger);animation:blocked-pulse 2s infinite;}
+.sim-card.exhausted{border:2px solid var(--warn);}
+@keyframes blocked-pulse{0%,100%{box-shadow:0 0 5px rgba(239,68,68,0.3);}50%{box-shadow:0 0 20px rgba(239,68,68,0.6);}}
+.sim-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sim-port{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);}
+.sim-badge{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;}
+.sim-badge.ready{background:rgba(16,185,129,.15);color:var(--sent);}
+.sim-badge.busy{background:rgba(245,158,11,.15);color:var(--warn);}
+.sim-badge.offline{background:rgba(100,116,139,.15);color:var(--muted);}
+.sim-badge.banned{background:rgba(239,68,68,.15);color:var(--danger);font-weight:800;}
+.sim-badge.exhausted{background:rgba(245,158,11,.2);color:var(--warn);font-weight:800;}
+.sim-badge.blocked{background:rgba(239,68,68,.2);color:var(--danger);font-weight:800;}
+.sim-number{font-size:12px;color:var(--muted);margin-bottom:10px;font-family:var(--mono);}
+.sim-bar-wrap{height:4px;background:var(--border);border-radius:2px;margin-bottom:6px;}
+.sim-bar{height:100%;border-radius:2px;background:var(--accent3);transition:width .4s;}
+.sim-bar.warn{background:var(--warn);}
+.sim-bar.danger{background:var(--danger);}
+.sim-count{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;}
+.sim-signal{font-size:11px;color:var(--muted);margin-top:6px;}
+.sig-bars{display:inline-flex;align-items:flex-end;gap:2px;margin-left:4px;}
+.sig-bar{width:3px;background:var(--border);border-radius:1px;}
+.sig-bar.active{background:var(--accent);box-shadow:0 0 5px var(--accent-glow);}
+
+.blocked-reason{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:8px;margin:8px 0;font-size:12px;color:var(--danger);font-weight:600;}
+.blocked-details{font-size:11px;color:var(--muted);margin:6px 0;line-height:1.6;}
+.blocked-alert-banner{background:rgba(239,68,68,.1);border:2px solid var(--danger);border-radius:12px;padding:20px;margin-bottom:20px;}
+.blocked-alert-banner h3{color:var(--danger);font-size:16px;margin-bottom:12px;}
+.blocked-alert-item{background:var(--surface);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;}
+
+/* ── Message tables ── */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.table-toolbar{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);}
+.table-toolbar input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;}
+.table-toolbar input:focus{border-color:var(--accent);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:none;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#000;}
+.btn-primary:hover{opacity:.85;}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.2);}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:10px 16px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:var(--surface2);font-weight:600;}
+tbody tr{border-top:1px solid var(--border);transition:background .1s;}
+tbody tr:hover{background:var(--card-bg);}
+tbody td{padding:14px 16px;font-size:13px;vertical-align:middle;}
+.td-phone{font-family:var(--mono);color:var(--accent);font-size:12px;font-weight:600;}
+.td-body{color:var(--text);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.td-time{font-size:11px;color:var(--muted);white-space:nowrap;}
+.td-port{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;}
+.status-pill.sent{background:rgba(16,185,129,.12);color:var(--sent);}
+.status-pill.received{background:rgba(0,212,255,.12);color:var(--received);}
+.status-pill.failed{background:rgba(239,68,68,.12);color:var(--danger);}
+.status-pill.pending{background:rgba(245,158,11,.12);color:var(--warn);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);}
+.pagination span{font-size:12px;color:var(--muted);}
+.pagination-btns{display:flex;gap:8px;}
+
+/* ── Compose / Bulk ── */
+.compose-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.card h3{font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.form-group input,.form-group textarea,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:all .2s;resize:vertical;}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--accent);background:var(--surface3);box-shadow:0 0 0 4px var(--accent-glow);}
+.form-group textarea{min-height:90px;}
+.char-count{font-size:11px;color:var(--muted);text-align:right;margin-top:4px;}
+.char-count.warn{color:var(--warn);}
+.bulk-drop{border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s;background:var(--surface2);}
+.bulk-drop:hover,.bulk-drop.drag{border-color:var(--accent);}
+.bulk-drop p{color:var(--muted);font-size:13px;}
+.bulk-drop .big{font-size:28px;margin-bottom:8px;}
+.recipient-list{max-height:140px;overflow-y:auto;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);}
+
+/* ── Live indicator ── */
+.live-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(239,68,68,.12);color:var(--danger);font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--danger);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* ── Toast ── */
+#toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9998;}
+.toast{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:slide-in .25s ease;max-width:320px;}
+.toast.success{border-color:rgba(16,185,129,.3);}
+.toast.error{border-color:rgba(239,68,68,.3);}
+.toast.info{border-color:rgba(0,212,255,.3);}
+@keyframes slide-in{from{transform:translateX(40px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--muted);}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:999;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:480px;max-width:90vw;}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">GSM <span>Gateway</span></div>
+    <p>Enter your dashboard password to continue</p>
+    <input type="password" id="login-pass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">Login →</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo"><div class="dot"></div> GSM Gateway</div>
+    <nav>
+      <div class="nav-item active" data-page="overview" onclick="showPage('overview',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" data-page="inbox" onclick="showPage('inbox',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+        Inbox
+        <span class="nav-badge" id="inbox-badge">0</span>
+      </div>
+      <div class="nav-item" data-page="outbox" onclick="showPage('outbox',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Outbox
+      </div>
+      <div class="nav-item" data-page="compose" onclick="showPage('compose',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Compose
+      </div>
+      <div class="nav-item" data-page="sims" onclick="showPage('sims',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+        SIM Cards
+      </div>
+      <div class="nav-item" data-page="settings" onclick="showPage('settings',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="conn-status">
+        <div class="conn-dot" id="conn-dot"></div>
+        <span id="conn-label">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <h1 id="page-title">Overview</h1>
+      <div class="spacer"></div>
+      <div class="topbar-stats">
+        <div class="topbar-stat sent">Sent: <span class="val" id="ts-sent">0</span></div>
+        <div class="topbar-stat recv">Recv: <span class="val" id="ts-recv">0</span></div>
+        <div class="topbar-stat fail">Failed: <span class="val" id="ts-fail">0</span></div>
+        <div class="topbar-stat pend">Queue: <span class="val" id="ts-pend">0</span></div>
+      </div>
+      <div id="live-indicator" class="live-pill" style="display:none">
+        <div class="live-dot"></div> LIVE
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── Overview ── -->
+      <div class="page active" id="page-overview">
+        <div class="stat-grid">
+          <div class="stat-card sent"><div class="label">Sent Today</div><div class="value" id="stat-sent">0</div><div class="icon">📤</div></div>
+          <div class="stat-card recv"><div class="label">Received Today</div><div class="value" id="stat-recv">0</div><div class="icon">📥</div></div>
+          <div class="stat-card fail"><div class="label">Failed</div><div class="value" id="stat-fail">0</div><div class="icon">⚠️</div></div>
+          <div class="stat-card pend"><div class="label">In Queue</div><div class="value" id="stat-pend">0</div><div class="icon">⏳</div></div>
+        </div>
+        <h3 style="margin-bottom:12px;font-size:14px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">SIM Card Status</h3>
+        <div class="sim-grid" id="overview-sims">
+          <div style="color:var(--muted);font-size:13px;padding:20px;">Loading SIM cards...</div>
+        </div>
+        <h3 style="margin-bottom:12px;font-size:14px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Recent Activity</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Direction</th><th>Phone</th><th>Message</th><th>Port</th><th>Status</th><th>Time</th></tr></thead>
+            <tbody id="recent-tbody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No messages yet</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Inbox ── -->
+      <div class="page" id="page-inbox">
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <input type="text" id="inbox-search" placeholder="Search by number or message..." oninput="debouncedSearch('inbox')"/>
+            <button class="btn btn-ghost btn-sm" onclick="loadInbox()">↻ Refresh</button>
+          </div>
+          <table>
+            <thead><tr><th>From</th><th>Message</th><th>Port</th><th>SIM Number</th><th>Received At</th></tr></thead>
+            <tbody id="inbox-tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;">Loading...</td></tr></tbody>
+          </table>
+          <div class="pagination">
+            <span id="inbox-count">0 messages</span>
+            <div class="pagination-btns">
+              <button class="btn btn-ghost btn-sm" id="inbox-prev" onclick="pageInbox(-1)">← Prev</button>
+              <button class="btn btn-ghost btn-sm" id="inbox-next" onclick="pageInbox(1)">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Outbox ── -->
+      <div class="page" id="page-outbox">
+        <div style="display:flex;gap:12px;margin-bottom:16px;">
+          <button class="btn btn-ghost btn-sm" id="btn-pause" onclick="toggleQueue()">⏸ Pause Queue</button>
+          <span style="font-size:12px;color:var(--muted);align-self:center">Queue: <b id="q-depth">0</b> pending</span>
+        </div>
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <input type="text" id="outbox-search" placeholder="Search by number or message..." oninput="debouncedSearch('outbox')"/>
+            <button class="btn btn-ghost btn-sm" onclick="loadOutbox()">↻ Refresh</button>
+          </div>
+          <table>
+            <thead><tr><th>To</th><th>Message</th><th>Port</th><th>Status</th><th>Sent At</th><th>Action</th></tr></thead>
+            <tbody id="outbox-tbody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">Loading...</td></tr></tbody>
+          </table>
+          <div class="pagination">
+            <span id="outbox-count">0 messages</span>
+            <div class="pagination-btns">
+              <button class="btn btn-ghost btn-sm" id="outbox-prev" onclick="pageOutbox(-1)">← Prev</button>
+              <button class="btn btn-ghost btn-sm" id="outbox-next" onclick="pageOutbox(1)">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Compose ── -->
+      <div class="page" id="page-compose">
+        <div class="compose-grid">
+          <!-- Single SMS -->
+          <div class="card">
+            <h3>✉️ Send Single SMS</h3>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" id="single-phone" placeholder="+923001234567"/>
+            </div>
+            <div class="form-group">
+              <label>Message</label>
+              <textarea id="single-msg" placeholder="Type your message..." oninput="updateCharCount('single-msg','single-chars')"></textarea>
+              <div class="char-count" id="single-chars">0 / 160 chars</div>
+            </div>
+            <button class="btn btn-primary" onclick="sendSingle()" style="width:100%">Send SMS →</button>
+          </div>
+
+          <!-- Bulk SMS -->
+          <div class="card">
+            <h3>📤 Bulk SMS Sender</h3>
+            <div class="form-group">
+              <label>Job Name</label>
+              <input type="text" id="bulk-name" placeholder="Campaign name (optional)"/>
+            </div>
+            <div class="form-group">
+              <label>Message Template</label>
+              <textarea id="bulk-msg" placeholder="Your message here. Use {name} for personalization." oninput="updateCharCount('bulk-msg','bulk-chars')"></textarea>
+              <div class="char-count" id="bulk-chars">0 / 160 chars</div>
+            </div>
+            <div class="form-group">
+              <label>Recipients</label>
+              <div class="bulk-drop" id="drop-zone" onclick="document.getElementById('csv-file').click()"
+                   ondragover="event.preventDefault();this.classList.add('drag')"
+                   ondragleave="this.classList.remove('drag')"
+                   ondrop="handleDrop(event)">
+                <div class="big">📎</div>
+                <p>Drop CSV file here or click to browse</p>
+                <p style="margin-top:4px;font-size:11px">One number per line, or CSV with column "phone"</p>
+              </div>
+              <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="handleFileUpload(this)"/>
+              <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                <span style="font-size:12px;color:var(--muted)">Or paste numbers:</span>
+              </div>
+              <textarea id="bulk-numbers" placeholder="+923001234567&#10;+923009876543&#10;..." style="margin-top:6px;min-height:80px;font-family:var(--mono);font-size:12px;" oninput="parsePastedNumbers()"></textarea>
+              <div id="recipient-preview" style="display:none" class="recipient-list"></div>
+              <div id="recipient-count" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+            </div>
+            <button class="btn btn-primary" onclick="sendBulk()" style="width:100%">Send Bulk →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SIM Cards ── -->
+      <div class="page" id="page-sims">
+        <div id="blocked-sim-alert" style="display:none;" class="blocked-alert-banner">
+          <h3>🚨 SIM Replacement Required</h3>
+          <div id="blocked-sim-list"></div>
+        </div>
+        <div class="sim-grid" id="sim-grid-full">
+          <div style="color:var(--muted);font-size:13px;padding:20px;">Loading...</div>
+        </div>
+      </div>
+
+      <!-- ── Settings ── -->
+      <div class="page" id="page-settings">
+        <div class="card" style="max-width:800px">
+          <h3>⚙️ Gateway Settings</h3>
+          <div id="settings-body" style="color:var(--muted);font-size:13px;line-height:1.8;">
+            Loading settings...
+          </div>
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+            <h3 style="margin-bottom:12px;">🔌 Detected Serial Ports</h3>
+            <div id="port-list" style="font-family:var(--mono);font-size:12px;color:var(--muted);">Scanning...</div>
+          </div>
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+            <h3 style="margin-bottom:12px;">💻 System Information</h3>
+            <div id="system-info" style="font-size:12px;color:var(--muted);line-height:1.8;">
+              Loading system info...
+            </div>
+          </div>
+        </div>
+
+        <!-- Telegram Integration Card -->
+        <div class="card" style="max-width:800px;margin-top:20px;">
+          <h3>📱 Telegram Integration</h3>
+          <div id="telegram-status" style="margin-bottom:16px;">
+            <div class="status-pill" id="tg-status-pill" style="font-size:13px;padding:6px 12px;">
+              <span class="status-dot"></span>
+              <span id="tg-status-text">Checking...</span>
+            </div>
+          </div>
+
+          <div id="telegram-config-form">
+            <div class="form-group">
+              <label>Bot Token</label>
+              <input type="text" id="tg-bot-token" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"/>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+                Get from <a href="https://t.me/BotFather" target="_blank" style="color:var(--accent);">@BotFather</a> on Telegram
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Chat ID</label>
+              <input type="text" id="tg-chat-id" placeholder="-1001234567890 or 123456789"/>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+                Your Telegram user ID or group ID (use <a href="https://t.me/userinfobot" target="_blank" style="color:var(--accent);">@userinfobot</a> to find)
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:16px;">
+              <button class="btn btn-primary" onclick="verifyTelegramToken()">
+                ✓ Verify Token
+              </button>
+              <button class="btn btn-ghost" onclick="configureTelegram()" id="btn-tg-save">
+                💾 Save & Connect
+              </button>
+              <button class="btn btn-danger" onclick="disableTelegram()" id="btn-tg-disable" style="display:none;">
+                🚫 Disable
+              </button>
+            </div>
+
+            <div id="tg-verify-result" style="margin-top:12px;font-size:13px;min-height:20px;"></div>
+          </div>
+
+          <div id="telegram-connected" style="display:none;">
+            <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:16px;margin-bottom:16px;">
+              <div style="font-size:14px;font-weight:600;color:var(--accent3);margin-bottom:8px;">
+                ✅ Telegram Connected
+              </div>
+              <div style="font-size:13px;color:var(--text);line-height:1.6;">
+                <strong>Bot:</strong> <span id="tg-bot-name">-</span><br>
+                <strong>Chat ID:</strong> <span id="tg-chat-display">-</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-primary" onclick="testTelegram()">
+                🧪 Send Test Message
+              </button>
+              <button class="btn btn-danger" onclick="disableTelegram()">
+                🚫 Disconnect
+              </button>
+            </div>
+
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+              <h4 style="margin-bottom:12px;font-size:14px;">📖 Available Bot Commands</h4>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted);line-height:2;">
+                <div><code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">/start</code> - Bot introduction and commands list</div>
+                <div><code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">/inbox</code> - Last 10 received messages</div>
+                <div><code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">/status</code> - SIM card status overview</div>
+                <div><code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">/stats</code> - Today's statistics</div>
+                <div><code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">/queue</code> - Pending messages count</div>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+              <h4 style="margin-bottom:12px;font-size:14px;">🔔 You Will Receive Notifications For</h4>
+              <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+                • 📩 New incoming SMS messages<br>
+                • 🚨 SIM cards blocked due to failures<br>
+                • ⚠️ SIM approaching daily limit (80%, 90%, 100%)<br>
+                • 🔄 Daily SIM count reset at midnight<br>
+                • 🚀 Gateway startup health report
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .content -->
+  </div><!-- .main -->
+</div><!-- #app -->
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let AUTH_PASS = '';
+let ws = null;
+let wsReconnectTimer = null;
+let inboxPage = 0, outboxPage = 0;
+const PAGE_SIZE = 50;
+let queuePaused = false;
+let recipients = [];
+let inboxTotal = 0, outboxTotal = 0;
+
+// ─── Login ────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-error');
+  if (!pass) { err.textContent = 'Enter your password'; return; }
+
+  const r = await fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pass })
+  }).catch(() => null);
+
+  if (!r || !r.ok) {
+    err.textContent = 'Wrong password. Try again.';
+    return;
+  }
+
+  AUTH_PASS = pass;
+  err.textContent = '';
+  document.getElementById('login-screen').classList.add('hidden');
+  initApp();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function initApp() {
+  connectWS();
+  loadOverview();
+  loadInbox();
+  loadOutbox();
+  loadSims();
+  loadSettings();
+  setInterval(loadOverview, 10000);
+  setInterval(loadSims, 15000);
+}
+
+// ─── WebSocket ────────────────────────────────────────────────────────────────
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+
+  ws.onopen = () => {
+    document.getElementById('conn-dot').classList.add('online');
+    document.getElementById('conn-label').textContent = 'Connected';
+    document.getElementById('live-indicator').style.display = 'inline-flex';
+    if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
+  };
+
+  ws.onclose = () => {
+    document.getElementById('conn-dot').classList.remove('online');
+    document.getElementById('conn-label').textContent = 'Reconnecting...';
+    document.getElementById('live-indicator').style.display = 'none';
+    wsReconnectTimer = setTimeout(connectWS, 4000);
+  };
+
+  ws.onmessage = (e) => {
+    const { type, data } = JSON.parse(e.data);
+    if (type === 'stats')          updateTopbar(data);
+    if (type === 'sms:received')   onInboundSMS(data);
+    if (type === 'message:sent')   onOutboundSent(data);
+    if (type === 'queue:updated')  loadOutbox();
+    if (type === 'modem:ready')    loadSims();
+  };
+}
+
+// ─── API helper ───────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const headers = { 'x-gateway-password': AUTH_PASS, 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  const r = await fetch(path, { ...opts, headers });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || r.statusText); }
+  return r.json();
+}
+
+// ─── Overview ─────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const data = await api('/api/stats');
+    updateTopbar(data.today);
+    renderOverviewSims(data.sims || []);
+    document.getElementById('q-depth').textContent = data.queueDepth || 0;
+    document.getElementById('ts-pend').textContent = data.queueDepth || 0;
+    document.getElementById('stat-pend').textContent = data.queueDepth || 0;
+    loadRecentActivity();
+  } catch(e) { /* silent */ }
+}
+
+function updateTopbar(s) {
+  if (!s) return;
+  const v = (k) => s[k] || 0;
+  document.getElementById('ts-sent').textContent = v('sent');
+  document.getElementById('ts-recv').textContent = v('received');
+  document.getElementById('ts-fail').textContent = v('failed');
+  document.getElementById('stat-sent').textContent = v('sent');
+  document.getElementById('stat-recv').textContent = v('received');
+  document.getElementById('stat-fail').textContent = v('failed');
+}
+
+async function loadRecentActivity() {
+  const inbox  = await api('/api/inbox?limit=5').catch(()=>({messages:[]}));
+  const outbox = await api('/api/outbox?limit=5').catch(()=>({messages:[]}));
+  const all = [
+    ...inbox.messages.map(m => ({...m, dir:'IN'})),
+    ...outbox.messages.map(m => ({...m, dir:'OUT'}))
+  ].sort((a,b) => b.created_at - a.created_at).slice(0,10);
+
+  const tbody = document.getElementById('recent-tbody');
+  if (!all.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No messages yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = all.map(m => `
+    <tr>
+      <td><span class="status-pill ${m.dir==='IN'?'received':'sent'}">${m.dir==='IN'?'↓ IN':'↑ OUT'}</span></td>
+      <td class="td-phone">${esc(m.phone)}</td>
+      <td class="td-body">${esc(m.body)}</td>
+      <td class="td-port">${esc(m.sim_port||'—')}</td>
+      <td><span class="status-pill ${m.status}">${m.status}</span></td>
+      <td class="td-time">${fmtTime(m.created_at)}</td>
+    </tr>`).join('');
+}
+
+// ─── SIMs ─────────────────────────────────────────────────────────────────────
+async function loadSims() {
+  try {
+    const sims = await api('/api/sims');
+    renderOverviewSims(sims);
+    renderFullSimGrid(sims);
+    renderBlockedSimAlert(sims);
+    const cnt = sims.filter(s=>s.isAvailable).length;
+    document.getElementById('conn-label').textContent = `${cnt}/${sims.length} SIMs ready`;
+  } catch(e) {}
+}
+
+async function renderBlockedSimAlert(sims) {
+  const blockedSims = sims.filter(s => s.isBlocked);
+  const alertEl = document.getElementById('blocked-sim-alert');
+  const listEl = document.getElementById('blocked-sim-list');
+  
+  if (blockedSims.length === 0) {
+    alertEl.style.display = 'none';
+    return;
+  }
+  
+  alertEl.style.display = 'block';
+  listEl.innerHTML = blockedSims.map(s => {
+    const blockedTime = s.blocked_at ? new Date(s.blocked_at * 1000).toLocaleString() : 'Unknown';
+    return `
+      <div class="blocked-alert-item">
+        <div>
+          <strong style="font-family:var(--mono);color:var(--accent)">${esc(s.port)}</strong>
+          <span style="color:var(--muted);margin-left:12px">${esc(s.phone_number || 'No number')}</span><br>
+          <span style="font-size:12px;color:var(--danger)">${esc(s.blocked_reason || 'Unknown reason')}</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="unblockSim('${s.port}')">✓ Reactivate</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderOverviewSims(sims) {
+  const el = document.getElementById('overview-sims');
+  if (!sims || !sims.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px 0;">No SIM cards detected yet.</div>'; return; }
+  el.innerHTML = sims.map(s => simCardHTML(s)).join('');
+}
+
+function renderFullSimGrid(sims) {
+  const el = document.getElementById('sim-grid-full');
+  if (!sims || !sims.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;">No SIM cards found. Check modem connections and .env ports.</div>'; return; }
+  el.innerHTML = sims.map(s => simCardHTML(s, true)).join('');
+}
+
+function simCardHTML(s, withToggle = false) {
+  const pct  = s.percentUsed || 0;
+  const barClass = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+  const sigBars  = signalBars(s.signal || 0);
+  
+  // Determine card state
+  let cardClass = '';
+  let badgeClass = s.status;
+  let badgeText = s.status;
+  let extraContent = '';
+  
+  if (s.isBlocked) {
+    cardClass = 'blocked';
+    badgeClass = 'blocked';
+    badgeText = '🚫 BLOCKED';
+    const blockedTime = s.blockedAt ? new Date(s.blockedAt * 1000).toLocaleString() : 'Unknown';
+    extraContent = `
+      <div class="blocked-reason">⚠️ Action Required: Replace this SIM card</div>
+      <div class="blocked-details">
+        <strong>Reason:</strong> ${esc(s.blockedReason || 'Unknown')}<br>
+        <strong>Blocked at:</strong> ${blockedTime}<br>
+        <strong>Failures:</strong> ${s.failureCount || 0} consecutive
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="unblockSim('${s.port}')">✓ SIM Replaced - Reactivate</button>
+    `;
+  } else if (pct >= 100) {
+    cardClass = 'exhausted';
+    badgeClass = 'exhausted';
+    badgeText = '⚠️ EXHAUSTED';
+    extraContent = `<div style="margin-top:8px;font-size:11px;color:var(--warn);">Resets at midnight</div>`;
+  } else if (pct >= 90) {
+    badgeText = '⚡ ' + pct + '%';
+  }
+  
+  return `<div class="sim-card ${s.status==='offline'?'offline':''} ${cardClass}">
+    <div class="sim-header">
+      <span class="sim-port">${esc(s.port)}</span>
+      <span class="sim-badge ${badgeClass}">${badgeText}</span>
+    </div>
+    <div class="sim-number">${esc(s.phoneNumber || 'No number')}</div>
+    <div class="sim-bar-wrap"><div class="sim-bar ${barClass}" style="width:${pct}%"></div></div>
+    <div class="sim-count"><span>${s.dailyCount} sent</span><span>${s.maxPerDay} max/day</span></div>
+    <div class="sim-signal">Signal: ${s.signal || 0}/31 ${sigBars}</div>
+    ${extraContent}
+    ${withToggle && !s.isBlocked ? `<button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%" onclick="toggleSim('${s.port}',${!s.isAvailable})">${s.isAvailable ? '🔴 Disable' : '🟢 Enable'}</button>` : ''}
+  </div>`;
+}
+
+function signalBars(val) {
+  const pct = Math.min(val / 31, 1);
+  const filled = Math.round(pct * 4);
+  let html = '<span class="sig-bars">';
+  for (let i=1; i<=4; i++) {
+    const h = 4 + i*3;
+    html += `<div class="sig-bar ${i<=filled?'active':''}" style="height:${h}px"></div>`;
+  }
+  return html + '</span>';
+}
+
+async function toggleSim(port, active) {
+  try {
+    await api(`/api/sims/${encodeURIComponent(port)}`, { method: 'PATCH', body: JSON.stringify({ active }) });
+    loadSims();
+    toast(active ? `SIM ${port} enabled` : `SIM ${port} disabled`, 'info');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function unblockSim(port) {
+  if (!confirm(`Reactivate SIM ${port}?\n\nOnly click OK if you have physically replaced the SIM card with a new one.`)) {
+    return;
+  }
+  try {
+    await api(`/api/sims/${encodeURIComponent(port)}/unblock`, { method: 'POST' });
+    loadSims();
+    toast(`✅ SIM ${port} reactivated and back in rotation!`, 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─── Inbox ────────────────────────────────────────────────────────────────────
+async function loadInbox(page = inboxPage) {
+  inboxPage = page;
+  const q = document.getElementById('inbox-search').value;
+  try {
+    const data = await api(`/api/inbox?limit=${PAGE_SIZE}&offset=${page*PAGE_SIZE}${q?'&q='+encodeURIComponent(q):''}`);
+    inboxTotal = data.total;
+    const tbody = document.getElementById('inbox-tbody');
+    document.getElementById('inbox-count').textContent = `${data.total} messages`;
+    document.getElementById('inbox-badge').textContent = data.total;
+
+    if (!data.messages.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;">📭 Inbox empty</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.messages.map(m => `
+      <tr>
+        <td class="td-phone">${esc(m.phone)}</td>
+        <td class="td-body">${esc(m.body)}</td>
+        <td class="td-port">${esc(m.sim_port||'—')}</td>
+        <td class="td-port">${esc(m.sim_number||'—')}</td>
+        <td class="td-time">${fmtTime(m.created_at)}</td>
+      </tr>`).join('');
+    document.getElementById('inbox-prev').disabled = page === 0;
+    document.getElementById('inbox-next').disabled = (page+1)*PAGE_SIZE >= inboxTotal;
+  } catch(e) { toast(e.message,'error'); }
+}
+
+function pageInbox(dir) { loadInbox(Math.max(0, inboxPage + dir)); }
+
+// ─── Outbox ───────────────────────────────────────────────────────────────────
+async function loadOutbox(page = outboxPage) {
+  outboxPage = page;
+  const q = document.getElementById('outbox-search').value;
+  try {
+    const data = await api(`/api/outbox?limit=${PAGE_SIZE}&offset=${page*PAGE_SIZE}${q?'&q='+encodeURIComponent(q):''}`);
+    outboxTotal = data.total;
+    const tbody = document.getElementById('outbox-tbody');
+    document.getElementById('outbox-count').textContent = `${data.total} messages`;
+
+    if (!data.messages.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;">📭 Outbox empty</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.messages.map(m => `
+      <tr>
+        <td class="td-phone">${esc(m.phone)}</td>
+        <td class="td-body">${esc(m.body)}</td>
+        <td class="td-port">${esc(m.sim_port||'—')}</td>
+        <td><span class="status-pill ${m.status}"><span class="status-dot"></span>${m.status}</span></td>
+        <td class="td-time">${fmtTime(m.sent_at || m.created_at)}</td>
+        <td>${m.status === 'pending' ? `<button class="btn btn-danger btn-sm" onclick="deleteQueueMessage('${m.id}')">🗑 Delete</button>` : '—'}</td>
+      </tr>`).join('');
+    document.getElementById('outbox-prev').disabled = page === 0;
+    document.getElementById('outbox-next').disabled = (page+1)*PAGE_SIZE >= outboxTotal;
+  } catch(e) { toast(e.message,'error'); }
+}
+
+function pageOutbox(dir) { loadOutbox(Math.max(0, outboxPage + dir)); }
+
+// ─── Compose ──────────────────────────────────────────────────────────────────
+async function sendSingle() {
+  const phone = document.getElementById('single-phone').value.trim();
+  const msg   = document.getElementById('single-msg').value.trim();
+  if (!phone || !msg) { toast('Phone and message are required', 'error'); return; }
+  try {
+    const r = await api('/api/send', { method: 'POST', body: JSON.stringify({ phone, message: msg }) });
+    toast(`✅ Queued! ID: ${r.id.slice(0,8)}...`, 'success');
+    document.getElementById('single-msg').value = '';
+    updateCharCount('single-msg','single-chars');
+    loadOutbox();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function sendBulk() {
+  const msg  = document.getElementById('bulk-msg').value.trim();
+  const name = document.getElementById('bulk-name').value.trim();
+  if (!msg)             { toast('Message is required','error'); return; }
+  if (!recipients.length) { toast('Add at least one recipient','error'); return; }
+  try {
+    const r = await api('/api/bulk', { method: 'POST', body: JSON.stringify({ recipients, message: msg, jobName: name }) });
+    toast(`✅ Bulk job queued! ${r.total} messages → Job ID: ${r.jobId.slice(0,8)}`, 'success');
+    recipients = [];
+    document.getElementById('bulk-numbers').value = '';
+    document.getElementById('recipient-count').textContent = '';
+    document.getElementById('recipient-preview').style.display = 'none';
+    loadOutbox();
+  } catch(e) { toast(e.message,'error'); }
+}
+
+function parsePastedNumbers() {
+  const raw = document.getElementById('bulk-numbers').value;
+  const lines = raw.split(/[\n,;]+/).map(l => l.trim()).filter(l => l.length > 5);
+  recipients = lines;
+  const el = document.getElementById('recipient-count');
+  el.textContent = `${recipients.length} recipient${recipients.length !== 1 ? 's' : ''} loaded`;
+  const prev = document.getElementById('recipient-preview');
+  if (recipients.length > 0) {
+    prev.style.display = 'block';
+    prev.textContent = recipients.slice(0,20).join('\n') + (recipients.length > 20 ? `\n... +${recipients.length-20} more` : '');
+  } else { prev.style.display = 'none'; }
+}
+
+function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => parseCSV(e.target.result);
+  reader.readAsText(file);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => parseCSV(ev.target.result);
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const parsed = [];
+  for (const line of lines) {
+    const parts = line.split(',');
+    // Try to find a column that looks like a phone number
+    const phone = parts.find(p => /^[+\d\s()-]{7,}$/.test(p.trim()));
+    if (phone) parsed.push(phone.trim());
+  }
+  recipients = parsed;
+  document.getElementById('bulk-numbers').value = parsed.join('\n');
+  parsePastedNumbers();
+  toast(`📎 Loaded ${parsed.length} recipients from CSV`, 'success');
+}
+
+function updateCharCount(textareaId, counterId) {
+  const v = document.getElementById(textareaId).value.length;
+  const el = document.getElementById(counterId);
+  const sms = Math.ceil(v / 160) || 1;
+  el.textContent = `${v} chars · ${sms} SMS part${sms>1?'s':''}`;
+  el.className = 'char-count' + (v > 140 ? ' warn' : '');
+}
+
+// ─── Queue ────────────────────────────────────────────────────────────────────
+async function toggleQueue() {
+  try {
+    const ep = queuePaused ? '/api/queue/resume' : '/api/queue/pause';
+    await api(ep, { method: 'POST' });
+    queuePaused = !queuePaused;
+    const btn = document.getElementById('btn-pause');
+    btn.textContent = queuePaused ? '▶ Resume Queue' : '⏸ Pause Queue';
+    btn.className = `btn btn-sm ${queuePaused ? 'btn-danger' : 'btn-ghost'}`;
+    toast(queuePaused ? 'Queue paused' : 'Queue resumed', 'info');
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// Delete a message from queue
+async function deleteQueueMessage(messageId) {
+  if (!confirm('Are you sure you want to delete this message from the queue?')) {
+    return;
+  }
+  try {
+    await api(`/api/queue/${messageId}`, { method: 'DELETE' });
+    toast('🗑 Message deleted from queue', 'success');
+    loadOutbox();
+    loadOverview();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const s = await api('/api/settings');
+    document.getElementById('settings-body').innerHTML = `
+      <table style="width:100%;border-collapse:collapse;">
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 0;color:var(--muted)">Max SMS/SIM/Day</td><td style="padding:10px 0;font-weight:600;font-family:var(--mono)">${s.maxSmsPerDay}</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 0;color:var(--muted)">Send Delay</td><td style="padding:10px 0;font-weight:600;font-family:var(--mono)">${s.sendDelayMS}ms</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 0;color:var(--muted)">Rotation Strategy</td><td style="padding:10px 0;font-weight:600;font-family:var(--mono)">${s.rotationStrategy}</td></tr>
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 0;color:var(--muted)">Telegram Bot</td><td style="padding:10px 0;font-weight:600">${s.telegramEnabled ? '🟢 Enabled' : '🔴 Disabled'}</td></tr>
+        <tr><td style="padding:10px 0;color:var(--muted)">Modem Ports</td><td style="padding:10px 0;font-weight:600;font-family:var(--mono);font-size:12px">${s.modemPorts.join(', ')}</td></tr>
+      </table>
+      <p style="margin-top:16px;font-size:12px;color:var(--muted)">To change settings, edit your <code style="background:var(--surface2);padding:2px 6px;border-radius:4px">.env</code> file and restart the server.</p>`;
+
+    // List serial ports
+    const ports = await api('/api/modems/ports');
+    const portEl = document.getElementById('port-list');
+    if (!ports.length) {
+      portEl.textContent = 'No serial ports detected.';
+    } else {
+      portEl.innerHTML = ports.map(p => `<div style="padding:4px 0;border-bottom:1px solid var(--border)">${p.path} ${p.manufacturer ? '— ' + p.manufacturer : ''} ${p.serialNumber ? '('+p.serialNumber+')' : ''}</div>`).join('');
+    }
+
+    // Load system info
+    try {
+      const sysInfo = await api('/api/system/info');
+      const sysEl = document.getElementById('system-info');
+      const gb = (bytes) => (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+      sysEl.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--muted)">Platform</td><td style="padding:6px 0;font-weight:600;font-family:var(--mono)">${sysInfo.platform} ${sysInfo.arch}</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--muted)">Node.js Version</td><td style="padding:6px 0;font-weight:600;font-family:var(--mono)">${sysInfo.nodeVersion}</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--muted)">CPUs</td><td style="padding:6px 0;font-weight:600">${sysInfo.cpus} cores</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--muted)">Memory</td><td style="padding:6px 0;font-weight:600;font-family:var(--mono)">${gb(sysInfo.freeMemory)} / ${gb(sysInfo.totalMemory)}</td></tr>
+          <tr><td style="padding:6px 0;color:var(--muted)">Server Uptime</td><td style="padding:6px 0;font-weight:600">${Math.floor(sysInfo.uptime / 3600)}h ${Math.floor((sysInfo.uptime % 3600) / 60)}m</td></tr>
+        </table>
+      `;
+    } catch(e) {
+      document.getElementById('system-info').textContent = 'Unable to load system info';
+    }
+
+    // Load Telegram configuration
+    loadTelegramConfig();
+  } catch(e) {}
+}
+
+// ─── Real-time events ─────────────────────────────────────────────────────────
+function onInboundSMS(msg) {
+  toast(`📩 New SMS from ${msg.phone}: ${msg.body.slice(0,40)}${msg.body.length>40?'...':''}`, 'info');
+  loadInbox();
+  loadOverview();
+}
+
+function onOutboundSent(msg) {
+  loadOutbox();
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+const pageTitles = { overview:'Overview', inbox:'Inbox', outbox:'Outbox', compose:'Compose SMS', sims:'SIM Cards', settings:'Settings' };
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[name] || name;
+}
+
+// ─── Search debounce ──────────────────────────────────────────────────────────
+const searchTimers = {};
+function debouncedSearch(type) {
+  clearTimeout(searchTimers[type]);
+  searchTimers[type] = setTimeout(() => type === 'inbox' ? loadInbox(0) : loadOutbox(0), 350);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtTime(unix) {
+  if (!unix) return '—';
+  const d = new Date(unix * 1000);
+  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
+let toastTimer = {};
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success:'✅', error:'❌', info:'💬' };
+  el.innerHTML = `<span>${icons[type]||'💬'}</span><span>${msg}</span>`;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 350); }, 4000);
+}
+
+// ─── Telegram Integration ─────────────────────────────────────────────────────
+async function loadTelegramConfig() {
+  try {
+    const config = await api('/api/telegram/config');
+    const statusPill = document.getElementById('tg-status-pill');
+    const statusText = document.getElementById('tg-status-text');
+    const configForm = document.getElementById('telegram-config-form');
+    const connectedView = document.getElementById('telegram-connected');
+    const btnDisable = document.getElementById('btn-tg-disable');
+    
+    if (config.enabled) {
+      statusPill.className = 'status-pill sent';
+      statusText.textContent = 'Connected';
+      configForm.style.display = 'none';
+      connectedView.style.display = 'block';
+      btnDisable.style.display = 'inline-flex';
+      
+      // Load bot info
+      document.getElementById('tg-chat-display').textContent = config.chatId || 'Unknown';
+      
+      // Try to get bot name from verify endpoint
+      try {
+        const botToken = config.botToken === 'configured' ? null : config.botToken;
+        if (botToken) {
+          document.getElementById('tg-bot-name').textContent = 'Bot';
+        } else {
+          document.getElementById('tg-bot-name').textContent = 'Configured Bot';
+        }
+      } catch(e) {
+        document.getElementById('tg-bot-name').textContent = 'Bot';
+      }
+    } else {
+      statusPill.className = 'status-pill failed';
+      statusText.textContent = 'Not Connected';
+      configForm.style.display = 'block';
+      connectedView.style.display = 'none';
+      btnDisable.style.display = 'none';
+    }
+  } catch(e) {
+    console.error('Failed to load Telegram config:', e);
+  }
+}
+
+async function verifyTelegramToken() {
+  const token = document.getElementById('tg-bot-token').value.trim();
+  const resultEl = document.getElementById('tg-verify-result');
+  
+  if (!token) {
+    resultEl.innerHTML = '<span style="color:var(--danger)">❌ Please enter a bot token</span>';
+    return;
+  }
+  
+  resultEl.innerHTML = '<span style="color:var(--muted)">⏳ Verifying...</span>';
+  
+  try {
+    const result = await api('/api/telegram/verify', {
+      method: 'POST',
+      body: JSON.stringify({ botToken: token })
+    });
+    
+    resultEl.innerHTML = `<span style="color:var(--accent3)">✅ ${result.message}\nBot: @${result.botUsername}</span>`;
+    toast('Bot token verified!', 'success');
+  } catch(e) {
+    resultEl.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+    toast('Invalid bot token', 'error');
+  }
+}
+
+async function configureTelegram() {
+  const token = document.getElementById('tg-bot-token').value.trim();
+  const chatId = document.getElementById('tg-chat-id').value.trim();
+  const resultEl = document.getElementById('tg-verify-result');
+  
+  if (!token || !chatId) {
+    resultEl.innerHTML = '<span style="color:var(--danger)">❌ Please fill in both bot token and chat ID</span>';
+    return;
+  }
+  
+  resultEl.innerHTML = '<span style="color:var(--muted)">⏳ Connecting to Telegram...</span>';
+  
+  try {
+    const result = await api('/api/telegram/configure', {
+      method: 'POST',
+      body: JSON.stringify({ botToken: token, chatId: chatId })
+    });
+    
+    resultEl.innerHTML = `<span style="color:var(--accent3)">✅ ${result.message}</span>`;
+    toast('Telegram connected successfully!', 'success');
+    
+    // Reload the config after a short delay
+    setTimeout(() => {
+      loadTelegramConfig();
+      loadSettings();
+    }, 1000);
+  } catch(e) {
+    resultEl.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+    toast('Failed to configure Telegram', 'error');
+  }
+}
+
+async function disableTelegram() {
+  if (!confirm('Are you sure you want to disconnect Telegram? You will stop receiving notifications.')) {
+    return;
+  }
+  
+  try {
+    await api('/api/telegram/disable', { method: 'POST' });
+    toast('Telegram disconnected', 'info');
+    
+    // Clear form fields
+    document.getElementById('tg-bot-token').value = '';
+    document.getElementById('tg-chat-id').value = '';
+    document.getElementById('tg-verify-result').innerHTML = '';
+    
+    // Reload config
+    setTimeout(() => loadTelegramConfig(), 500);
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function testTelegram() {
+  try {
+    await api('/api/telegram/test', { method: 'POST' });
+    toast('Test message sent to Telegram!', 'success');
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+</script>
+</body>
+</html>
