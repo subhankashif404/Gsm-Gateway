@@ -2,10 +2,6 @@
 
 GSM Gateway is an advanced SMS routing and management system designed to handle high-volume SMS dispatch through multiple GSM modems. It features intelligent SIM rotation, health monitoring, automatic blocking, and real-time Telegram notifications — helping businesses and developers manage large-scale SMS operations with ease.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fsubhankashif404%2FGsm-Gateway)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 ## 🌟 Features
 
 ### 📡 Multi-Modem Management
@@ -192,25 +188,6 @@ GSM Gateway is an advanced SMS routing and management system designed to handle 
 
 ---
 
-## 📤 Push to GitHub
-
-The project is already optimized for GitHub! Here's how to upload it:
-
-### Windows (PowerShell)
-
-```powershell
-# Run the cleanup script to remove node_modules and large files
-.\cleanup-github.bat
-
-# Initialize git and push
-git init
-git add .
-git commit -m "Initial commit - GSM Gateway"
-git branch -M main
-git remote add origin https://github.com/subhankashif404/Gsm-Gateway.git
-git push -u origin main
-```
-
 ### Linux/Mac
 
 ```bash
@@ -224,76 +201,9 @@ git branch -M main
 git remote add origin https://github.com/subhankashif404/Gsm-Gateway.git
 git push -u origin main
 ```
-
-### ⚠️ Important: What NOT to Commit
-
-The `.gitignore` file already excludes:
-- ❌ `node_modules/` - 100MB+ (run `npm install` after cloning)
-- ❌ `.env` - Contains passwords
-- ❌ `data/*.db` - Database files
-- ❌ `*.log` - Log files
-- ✅ **DO commit:** `package.json`, `package-lock.json` (dependencies list)
-
-### After Cloning from GitHub
-
-```bash
-# Clone your repository
-git clone https://github.com/subhankashif404/Gsm-Gateway.git
-cd Gsm-Gateway
-
-# Install dependencies
-npm install
-
-# Run setup
-npm run setup
-
-# Start the app
-npm start
-```
-
 ---
 
-## 🌐 Quick Deploy to Vercel
-
-Want to try the dashboard without setting up locally?
-
-**Option 1: One-Click Deploy**
-
-Click the button at the top of this README and follow the prompts.
-
-**Option 2: Deploy via CLI**
-```bash
-npm install -g vercel
-vercel login
-vercel --prod
-```
-
-⚠️ **Note:** Vercel deployment is for dashboard/API demo only. Physical GSM modems require a local server with USB access.
-
 📖 **Full Deployment Guide:** See [DEPLOYMENT.md](DEPLOYMENT.md)
-
-## 📖 Configuration
-
-### Environment Variables (.env)
-
-| Variable | Description | Default |
-|----------|-------------|---------|  
-| `PORT` | Server port | `3000` |
-| `NODE_ENV` | Environment mode | `production` |
-| `MODEM_AUTO_DETECT` | Auto-detect modems | `true` |
-| `MODEM_PORTS` | Manual modem ports | `(empty)` |
-| `MODEM_BAUD_RATE` | Modem communication speed | `115200` |
-| `MAX_SMS_PER_SIM_PER_DAY` | Daily SMS limit per SIM | `625` |
-| `SMS_SEND_DELAY_MS` | Delay between SMS (ms) | `2000` |
-| `MAX_CONSECUTIVE_FAILURES` | Auto-block threshold | `5` |
-| `SIM_ALERT_THRESHOLDS` | Alert percentages | `80,90,100` |
-| `AUTO_BLOCK_ENABLED` | Enable auto-blocking | `true` |
-| `DASHBOARD_PASSWORD` | Dashboard login password | `admin123` |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token | `(empty)` |
-| `TELEGRAM_CHAT_ID` | Telegram chat ID | `(empty)` |
-| `DB_PATH` | SQLite database path | `./data/gateway.db` |
-| `RATE_LIMIT_WINDOW_MS` | Rate limit window | `900000` |
-| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
 
 ### Telegram Bot Setup
 
@@ -378,24 +288,11 @@ With optimal configuration:
 - **16 SIMs:** 10,000 SMS/day total capacity
 - **Scalable:** Add more modems to increase throughput
 - **Conservative:** Set to 500 SMS/day for extra safety
-
-## 🎯 Use Cases
-
-### For Businesses
-
-📢 **Marketing Campaigns**: Send promotional messages to customers  
-🔔 **Notifications**: Order updates, appointment reminders  
-🔐 **OTP Services**: Two-factor authentication via SMS  
-📊 **Bulk Messaging**: Reach thousands of contacts efficiently  
-🏫 **Schools**: Send alerts to parents and students  
-🏥 **Healthcare**: Appointment reminders, test results  
-🏢 **Corporate**: Internal communications  
-🎪 **Events**: Event updates and notifications  
-
-```
+ 
 ## 📦 Testing
 
 > 🧪 **Live Demo**: https://gsm.gateway.vercel.app
+
 ---
 
 ## 👨‍💻 Developed By
